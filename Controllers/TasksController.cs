@@ -47,7 +47,7 @@ namespace TaskTrackerAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> Put(int id, [FromBody] TaskItem item)
+        public async Task<ActionResult> Put(int id, [FromBody] TaskItemUpdateDto dto)
         {
             var existing = await _context.Tasks.FindAsync(id);
             if (existing == null)
@@ -55,9 +55,9 @@ namespace TaskTrackerAPI.Controllers
                 return NotFound();
             }
 
-            existing.Title = item.Title;
-            existing.Description = item.Description;
-            existing.IsCompleted = item.IsCompleted;
+            existing.Title = dto.Title;
+            existing.Description = dto.Description;
+            existing.IsCompleted = dto.IsCompleted;
 
             await _context.SaveChangesAsync();
             return NoContent();
