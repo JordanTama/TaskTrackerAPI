@@ -1,11 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace TaskTrackerAPI.Models;
+namespace TaskTrackerAPI.DTOs;
 
-public class TaskItem
+public class TaskItemUpdateDto
 {
-    public int Id { get; set; }
-
     [Required]
     [StringLength(100)]
     public required string Title { get; set; }
@@ -14,6 +12,4 @@ public class TaskItem
     public string? Description { get; set; }
 
     public bool IsCompleted { get; set; } = false;
-
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
