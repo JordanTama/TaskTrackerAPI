@@ -24,9 +24,22 @@ public class TaskItemService(TaskDbContext context)
         return task;
     }
 
-    public async Task<List<TaskItem>> ReadAllAsync()
+    public async Task<List<TaskItem>> ReadAllAsync(bool? isCompleted, string? search)
     {
-        return await _context.Tasks.ToListAsync();
+        var query = _context.Tasks.AsQueryable();
+
+        if (isCompleted.HasValue)
+        {
+            query = query.Where(task => task.IsCompleted == isCompleted.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            search = search.Trim();
+            query = query.Where(task => EF.Functions.Like(task.Title, $"%{search}%"));
+        }
+
+        return await query.ToListAsync();
     }
 
     public async Task<TaskItem?> ReadAsync(int id)

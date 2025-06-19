@@ -19,9 +19,9 @@ public class TasksController(TaskItemService service) : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<TaskItem>>> GetAll()
+    public async Task<ActionResult<List<TaskItem>>> GetAll([FromQuery] bool? isCompleted, [FromQuery] string? search)
     {
-        return await _service.ReadAllAsync();
+        return await _service.ReadAllAsync(isCompleted, search);
     }
 
     [HttpGet("{id}")]
