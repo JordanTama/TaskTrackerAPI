@@ -1,81 +1,47 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TaskTrackerAPI.Data;
 using TaskTrackerAPI.DTOs;
 using TaskTrackerAPI.Models;
+using TaskTrackerAPI.Services;
 
-namespace TaskTrackerAPI.Controllers
+namespace TaskTrackerAPI.Controllers;
+
+[ApiController]
+[Route("api/tasks")]
+public class TasksController(TaskItemService service) : ControllerBase
 {
-    [ApiController]
-    [Route("api/tasks")]
-    public class TasksController : ControllerBase
+    private readonly TaskItemService _service = service;
+
+    [HttpPost]
+    public async Task<ActionResult<TaskItem>> Post([FromBody] TaskItemCreateDto dto)
     {
-        private readonly TaskDbContext _context;
+        var task = await _service.CreateAsync(dto);
+        return Created($"api/tasks/{task.Id}", task);
+    }
 
-        public TasksController(TaskDbContext context)
-        {
-            _context = context;
-        }
+    [HttpGet]
+    public async Task<ActionResult<List<TaskItem>>> GetAll()
+    {
+        return await _service.ReadAllAsync();
+    }
 
-        [HttpPost]
-        public async Task<ActionResult<TaskItem>> Post([FromBody] TaskItemCreateDto dto)
-        {
-            var task = new TaskItem
-            {
-                Title = dto.Title,
-                Description = dto.Description,
-                IsCompleted = dto.IsCompleted
-            };
+    [HttpGet("{id}")]
+    public async Task<ActionResult<TaskItem>> Get(int id)
+    {
+        var task = await _service.ReadAsync(id);
+        return task == null ? NotFound() : Ok(task);
+    }
 
-            await _context.Tasks.AddAsync(task);
-            await _context.SaveChangesAsync();
+    [HttpPut("{id}")]
+    public async Task<ActionResult> Put(int id, [FromBody] TaskItemUpdateDto dto)
+    {
+        bool result = await _service.UpdateAsync(id, dto);
+        return result ? NoContent() : NotFound();
+    }
 
-            return Created($"api/tasks/{task.Id}", task);
-        }
-
-        [HttpGet]
-        public async Task<ActionResult<List<TaskItem>>> GetAll()
-        {
-            return await _context.Tasks.ToListAsync();
-        }
-
-        [HttpGet("{id}")]
-        public async Task<ActionResult<TaskItem>> Get(int id)
-        {
-            var task = await _context.Tasks.FindAsync(id);
-            return task == null ? NotFound() : Ok(task);
-        }
-
-        [HttpPut("{id}")]
-        public async Task<ActionResult> Put(int id, [FromBody] TaskItemUpdateDto dto)
-        {
-            var existing = await _context.Tasks.FindAsync(id);
-            if (existing == null)
-            {
-                return NotFound();
-            }
-
-            existing.Title = dto.Title;
-            existing.Description = dto.Description;
-            existing.IsCompleted = dto.IsCompleted;
-
-            await _context.SaveChangesAsync();
-            return NoContent();
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<ActionResult> Delete(int id)
-        {
-            var existing = await _context.Tasks.FindAsync(id);
-            if (existing == null)
-            {
-                return NotFound();
-            }
-
-            _context.Tasks.Remove(existing);
-
-            await _context.SaveChangesAsync();
-            return NoContent();
-        }
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> Delete(int id)
+    {
+        bool result = await _service.DeleteAsync(id);
+        return result ? NoContent() : NotFound();
     }
 }

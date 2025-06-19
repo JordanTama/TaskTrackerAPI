@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TaskTrackerAPI.Data;
 using TaskTrackerAPI.Middleware;
+using TaskTrackerAPI.Services;
 using Serilog;
 
 
@@ -12,6 +13,7 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();
 
+builder.Services.AddScoped<TaskItemService>();
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
