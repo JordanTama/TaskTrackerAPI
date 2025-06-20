@@ -24,7 +24,7 @@ public class TaskItemService(TaskDbContext context)
         return task;
     }
 
-    public async Task<List<TaskItem>> ReadAllAsync(bool? isCompleted, string? search)
+    public async Task<List<TaskItem>> ReadAllAsync(bool? isCompleted, string? search, string? sortBy, string? sortOrder)
     {
         var query = _context.Tasks.AsQueryable();
 
@@ -35,8 +35,39 @@ public class TaskItemService(TaskDbContext context)
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            search = search.Trim();
             query = query.Where(task => EF.Functions.Like(task.Title, $"%{search}%"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(sortBy))
+        {
+            bool orderAscending = sortOrder == "asc";
+
+            switch (sortBy)
+            {
+                case "title":
+                    query = orderAscending
+                        ? query.OrderBy(task => task.Title)
+                        : query.OrderByDescending(task => task.Title);
+                    break;
+
+                case "description" when orderAscending:
+                    query = orderAscending
+                        ? query.OrderBy(task => task.Description)
+                        : query.OrderByDescending(task => task.Description);
+                    break;
+
+                case "iscompleted" when orderAscending:
+                    query = orderAscending
+                        ? query.OrderBy(task => task.IsCompleted)
+                        : query.OrderByDescending(task => task.IsCompleted);
+                    break;
+
+                case "createdat" when orderAscending:
+                    query = orderAscending
+                        ? query.OrderBy(task => task.CreatedAt)
+                        : query.OrderByDescending(task => task.CreatedAt);
+                    break;
+            }
         }
 
         return await query.ToListAsync();

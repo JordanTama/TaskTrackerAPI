@@ -19,9 +19,43 @@ public class TasksController(TaskItemService service) : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<TaskItem>>> GetAll([FromQuery] bool? isCompleted, [FromQuery] string? search)
+    public async Task<ActionResult<List<TaskItem>>> GetAll(
+        [FromQuery] bool? isCompleted,
+        [FromQuery] string? search,
+        [FromQuery] string? sortBy,
+        [FromQuery] string? sortOrder = "asc")
     {
-        return await _service.ReadAllAsync(isCompleted, search);
+        // Validate the 'search' value
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            search = search.Trim().ToLowerInvariant();
+        }
+
+        // Validate the 'sortBy' value
+        if (!string.IsNullOrWhiteSpace(sortBy))
+        {
+            sortBy = sortBy.Trim().ToLowerInvariant();
+            var validSortKeys = new[] { "title", "description", "iscompleted", "createdat" };
+
+            if (!validSortKeys.Contains(sortBy))
+            {
+                return BadRequest($"Invalid {nameof(sortBy)} value: {sortBy}");
+            }
+        }
+        
+        // Validate the 'sortOrder' value
+        if (!string.IsNullOrWhiteSpace(sortOrder))
+        {
+            sortOrder = sortOrder.Trim().ToLowerInvariant();
+            var validOrderKeys = new[] { "asc", "desc" };
+
+            if (!validOrderKeys.Contains(sortOrder))
+            {
+                return BadRequest($"Invalid {nameof(sortOrder)} value: {sortOrder}");
+            }
+        }
+
+        return await _service.ReadAllAsync(isCompleted, search, sortBy, sortOrder);
     }
 
     [HttpGet("{id}")]
