@@ -24,7 +24,13 @@ public class TaskItemService(TaskDbContext context)
         return task;
     }
 
-    public async Task<List<TaskItem>> ReadAllAsync(bool? isCompleted, string? search, string? sortBy, string? sortOrder)
+    public async Task<List<TaskItem>> ReadAllAsync(
+        bool? isCompleted,
+        string? search,
+        string? sortBy,
+        string? sortOrder,
+        int? page,
+        int? pageSize)
     {
         var query = _context.Tasks.AsQueryable();
 
@@ -38,36 +44,30 @@ public class TaskItemService(TaskDbContext context)
             query = query.Where(task => EF.Functions.Like(task.Title, $"%{search}%"));
         }
 
-        if (!string.IsNullOrWhiteSpace(sortBy))
+        bool orderAscending = sortOrder == "asc";
+
+        query = sortBy switch
         {
-            bool orderAscending = sortOrder == "asc";
-
-            switch (sortBy)
-            {
-                case "title":
-                    query = orderAscending
-                        ? query.OrderBy(task => task.Title)
-                        : query.OrderByDescending(task => task.Title);
-                    break;
-
-                case "description" when orderAscending:
-                    query = orderAscending
-                        ? query.OrderBy(task => task.Description)
-                        : query.OrderByDescending(task => task.Description);
-                    break;
-
-                case "iscompleted" when orderAscending:
-                    query = orderAscending
-                        ? query.OrderBy(task => task.IsCompleted)
-                        : query.OrderByDescending(task => task.IsCompleted);
-                    break;
-
-                case "createdat" when orderAscending:
-                    query = orderAscending
-                        ? query.OrderBy(task => task.CreatedAt)
-                        : query.OrderByDescending(task => task.CreatedAt);
-                    break;
-            }
+            "title" => orderAscending
+                                ? query.OrderBy(task => task.Title)
+                                : query.OrderByDescending(task => task.Title),
+            "description" => orderAscending
+                                ? query.OrderBy(task => task.Description)
+                                : query.OrderByDescending(task => task.Description),
+            "iscompleted" => orderAscending
+                                ? query.OrderBy(task => task.IsCompleted)
+                                : query.OrderByDescending(task => task.IsCompleted),
+            "createdat" => orderAscending
+                                ? query.OrderBy(task => task.CreatedAt)
+                                : query.OrderByDescending(task => task.CreatedAt),
+            _ => query.OrderBy(task => task.Id),
+        };
+        
+        if (page.HasValue && pageSize.HasValue)
+        {
+            int take = pageSize.Value;
+            int pageStart = (page.Value - 1) * take;
+            query = query.Skip(pageStart).Take(take);
         }
 
         return await query.ToListAsync();

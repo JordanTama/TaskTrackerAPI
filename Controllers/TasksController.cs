@@ -23,7 +23,9 @@ public class TasksController(TaskItemService service) : ControllerBase
         [FromQuery] bool? isCompleted,
         [FromQuery] string? search,
         [FromQuery] string? sortBy,
-        [FromQuery] string? sortOrder = "asc")
+        [FromQuery] string? sortOrder = "asc",
+        [FromQuery] int? page = 1,
+        [FromQuery] int? pageSize = 10)
     {
         // Validate the 'search' value
         if (!string.IsNullOrWhiteSpace(search))
@@ -39,10 +41,10 @@ public class TasksController(TaskItemService service) : ControllerBase
 
             if (!validSortKeys.Contains(sortBy))
             {
-                return BadRequest($"Invalid {nameof(sortBy)} value: {sortBy}");
+                return ValidationError(nameof(sortBy), sortBy);
             }
         }
-        
+
         // Validate the 'sortOrder' value
         if (!string.IsNullOrWhiteSpace(sortOrder))
         {
@@ -51,11 +53,28 @@ public class TasksController(TaskItemService service) : ControllerBase
 
             if (!validOrderKeys.Contains(sortOrder))
             {
-                return BadRequest($"Invalid {nameof(sortOrder)} value: {sortOrder}");
+                return ValidationError(nameof(sortOrder), sortOrder);
             }
         }
 
-        return await _service.ReadAllAsync(isCompleted, search, sortBy, sortOrder);
+        // Validate the 'page' value
+        if (page.HasValue && page.Value <= 0)
+        {
+            return ValidationError(nameof(page), page);
+        }
+
+        // Validate the 'pageSize' value
+        if (pageSize.HasValue && (pageSize.Value <= 0 || pageSize > 100))
+        {
+            return ValidationError(nameof(pageSize), pageSize);
+        }
+
+        return await _service.ReadAllAsync(isCompleted, search, sortBy, sortOrder, page, pageSize);
+
+        BadRequestObjectResult ValidationError<T>(string valueName, T value)
+        {
+            return BadRequest($"Invalid {valueName} value: {value?.ToString() ?? "null"}");
+        }
     }
 
     [HttpGet("{id}")]
